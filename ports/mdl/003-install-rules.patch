@@ -1,0 +1,318 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 25850b6..af9bb58 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -50,9 +50,13 @@ option(MDL_BUILD_ARNOLD_PLUGIN "Enable the build of the MDL Arnold plugin." ON)
+ option(MDL_LOG_PLATFORM_INFOS "Prints some infos about the current build system (relevant for error reports)." ON)
+ option(MDL_LOG_DEPENDENCIES "Prints the list of dependencies during the generation step." ON)
+ option(MDL_LOG_FILE_DEPENDENCIES "Prints the list of files that is copied after a successful build." ON)
++option(MDL_INSTALL_HEADERS "Install headers." ON)
+ set(MDL_ADDITIONAL_COMPILER_DEFINES "MDL_SOURCE_RELEASE" CACHE STRING "Additional compile defines that are passed to each of the projects")
+ set(MDL_ADDITIONAL_COMPILER_OPTIONS "" CACHE STRING "Additional compile options that are passed to each of the projects")
+ 
++include(GNUInstallDirs)
++include(CMakePackageConfigHelpers)
++
+ # -------------------------------------------------------------------------------------------------
+ # general setup
+ include(${MDL_BASE_FOLDER}/cmake/setup.cmake)
+@@ -215,3 +219,60 @@ foreach(_TEST_POST ${MDL_TEST_LIST_POST})
+     add_subdirectory(${_TEST_POST})
+ endforeach()
+ 
++# Config
++#--------------------------------------------------------------------------------------------------
++
++file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/mdl-config.cmake.in" [=[
++    @PACKAGE_INIT@
++    include("@PACKAGE_PATH_EXPORT_TARGETS@")
++]=])
++
++set(PATH_EXPORT_TARGETS "${CMAKE_INSTALL_DATADIR}/mdl/mdl-targets.cmake")
++configure_package_config_file(
++    "${CMAKE_CURRENT_BINARY_DIR}/mdl-config.cmake.in"
++    "${CMAKE_CURRENT_BINARY_DIR}/mdl-config.cmake"
++    PATH_VARS
++        PATH_EXPORT_TARGETS
++    INSTALL_DESTINATION ${CMAKE_INSTALL_DATADIR}/mdl
++)
++
++write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/mdl-config-version.cmake"
++    VERSION     2020.1.1
++  COMPATIBILITY SameMajorVersion
++)
++
++# Install
++#--------------------------------------------------------------------------------------------------
++
++install(
++    TARGETS
++        headers
++        core
++        sdk
++        i18n
++        mdlc
++        mdlm
++    EXPORT   mdl-targets
++    ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    LIBRARY  DESTINATION modules # ${CMAKE_INSTALL_LIBDIR}
++    RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
++    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
++)
++
++install(
++    EXPORT       mdl-targets
++    NAMESPACE    "mdl::"
++    DESTINATION  "${CMAKE_INSTALL_DATADIR}/mdl"
++)
++
++install(
++    FILES
++        ${CMAKE_CURRENT_BINARY_DIR}/mdl-config.cmake
++        ${CMAKE_CURRENT_BINARY_DIR}/mdl-config-version.cmake
++    DESTINATION  "${CMAKE_INSTALL_DATADIR}/mdl"
++)
++
++export(
++    EXPORT    mdl-targets
++    NAMESPACE "mdl::"
++)
+diff --git a/cmake/utilities.cmake b/cmake/utilities.cmake
+index 9417999..2374e5c 100644
+--- a/cmake/utilities.cmake
++++ b/cmake/utilities.cmake
+@@ -668,7 +668,7 @@ function(CREATE_FROM_BASE_PRESET)
+     endif()
+ 
+     # create target and alias
+-    if(CREATE_FROM_BASE_PRESET_TYPE STREQUAL "STATIC" OR CREATE_FROM_BASE_PRESET_TYPE STREQUAL "SHARED")
++    if(CREATE_FROM_BASE_PRESET_TYPE STREQUAL "STATIC" OR CREATE_FROM_BASE_PRESET_TYPE STREQUAL "SHARED" OR CREATE_FROM_BASE_PRESET_TYPE STREQUAL "MODULE")
+         add_library(${CREATE_FROM_BASE_PRESET_TARGET} ${CREATE_FROM_BASE_PRESET_TYPE} ${CREATE_FROM_BASE_PRESET_SOURCES})
+         add_library(${CREATE_FROM_BASE_PRESET_NAMESPACE}::${CREATE_FROM_BASE_PRESET_TARGET} ALIAS ${CREATE_FROM_BASE_PRESET_TARGET})
+     elseif(CREATE_FROM_BASE_PRESET_TYPE STREQUAL "EXECUTABLE" OR CREATE_FROM_BASE_PRESET_TYPE STREQUAL "WIN_EXECUTABLE")
+diff --git a/include/CMakeLists.txt b/include/CMakeLists.txt
+index 7662d45..36e88a3 100644
+--- a/include/CMakeLists.txt
++++ b/include/CMakeLists.txt
+@@ -234,3 +234,17 @@ source_group("base" FILES ${PROJECT_HEADERS_BASE})
+ source_group("math" FILES ${PROJECT_HEADERS_MATH})
+ source_group("mdl" FILES ${PROJECT_HEADERS_MDL})
+ source_group("neuraylib" FILES ${PROJECT_HEADERS_NEURAYLIB})
++
++if(MDL_INSTALL_HEADERS)
++    install(
++        DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/mi"
++        TYPE      INCLUDE
++    )
++endif()
++
++add_library(headers INTERFACE)
++target_include_directories(headers
++    INTERFACE
++        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
++        $<INSTALL_INTERFACE:include>
++)
+diff --git a/src/prod/bin/i18n/CMakeLists.txt b/src/prod/bin/i18n/CMakeLists.txt
+index 53ed95e..edd87c7 100644
+--- a/src/prod/bin/i18n/CMakeLists.txt
++++ b/src/prod/bin/i18n/CMakeLists.txt
+@@ -61,14 +61,14 @@ set(PROJECT_SOURCES
+ 
+ # create target from template
+ create_from_base_preset(
+-    TARGET ${PROJECT_NAME}
++    TARGET i18n
+     TYPE EXECUTABLE
+     OUTPUT_NAME "i18n"
+     SOURCES ${PROJECT_SOURCES}
+ )
+ 
+ # add mdl and other dependencies
+-target_add_dependencies(TARGET ${PROJECT_NAME} 
++target_add_dependencies(TARGET i18n 
+     DEPENDS 
+         boost
+         llvm
+@@ -84,3 +84,5 @@ target_add_dependencies(TARGET ${PROJECT_NAME}
+ 
+ # add tests if available
+ add_tests(POST)
++
++add_executable(${PROJECT_NAME} ALIAS i18n)
+diff --git a/src/prod/bin/mdlc/CMakeLists.txt b/src/prod/bin/mdlc/CMakeLists.txt
+index ef79dea..4b7b0cf 100644
+--- a/src/prod/bin/mdlc/CMakeLists.txt
++++ b/src/prod/bin/mdlc/CMakeLists.txt
+@@ -46,14 +46,14 @@ set(PROJECT_SOURCES
+ 
+ # create target from template
+ create_from_base_preset(
+-    TARGET ${PROJECT_NAME}
++    TARGET mdlc
+     TYPE EXECUTABLE
+     OUTPUT_NAME "mdlc"
+     SOURCES ${PROJECT_SOURCES}
+ )
+ 
+ # add mdl and other dependencies
+-target_add_dependencies(TARGET ${PROJECT_NAME} 
++target_add_dependencies(TARGET mdlc 
+     DEPENDS 
+         boost
+         llvm
+@@ -70,4 +70,6 @@ target_add_dependencies(TARGET ${PROJECT_NAME}
+         mdl::base-system-version
+         ${LINKER_END_GROUP}
+     )
++    
++add_executable(${PROJECT_NAME} ALIAS mdlc)
+     
+\ No newline at end of file
+diff --git a/src/prod/bin/mdlm/CMakeLists.txt b/src/prod/bin/mdlm/CMakeLists.txt
+index 2cb7f1a..403c4c3 100644
+--- a/src/prod/bin/mdlm/CMakeLists.txt
++++ b/src/prod/bin/mdlm/CMakeLists.txt
+@@ -60,14 +60,14 @@ set(PROJECT_SOURCES
+ 
+ # create target from template
+ create_from_base_preset(
+-    TARGET ${PROJECT_NAME}
++    TARGET mdlm
+     TYPE EXECUTABLE
+     OUTPUT_NAME "mdlm"
+     SOURCES ${PROJECT_SOURCES}
+ )
+ 
+ # add dependencies
+-target_add_dependencies(TARGET ${PROJECT_NAME}
++target_add_dependencies(TARGET mdlm
+     DEPENDS
+         boost
+         ${LINKER_START_GROUP}
+@@ -83,7 +83,9 @@ target_add_dependencies(TARGET ${PROJECT_NAME}
+     )
+     
+ # creates a user settings file to setup the debugger (visual studio only, otherwise this is a no-op)
+-target_create_vs_user_settings(TARGET ${PROJECT_NAME})
++target_create_vs_user_settings(TARGET mdlm)
+ 
+ # add tests if available
+ add_tests()
++
++add_executable(${PROJECT_NAME} ALIAS mdlm)
+diff --git a/src/prod/lib/mdl_core/CMakeLists.txt b/src/prod/lib/mdl_core/CMakeLists.txt
+index eb2135c..69faaad 100644
+--- a/src/prod/lib/mdl_core/CMakeLists.txt
++++ b/src/prod/lib/mdl_core/CMakeLists.txt
+@@ -36,26 +36,26 @@ set(PROJECT_SOURCES
+ 
+ # create target from template
+ create_from_base_preset(
+-    TARGET ${PROJECT_NAME}
+-    TYPE SHARED
++    TARGET core
++    TYPE MODULE
+     SOURCES ${PROJECT_SOURCES}
+     EMBED_RC "mdl_core.rc"
+     )
+ 
+ # customize name
+-set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "lib")
+-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "mdl_core")
++set_target_properties(core PROPERTIES PREFIX "lib")
++set_target_properties(core PROPERTIES OUTPUT_NAME "mdl_core")
+ 
+ if(MACOSX)
+-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".so") # corresponding to the binary release
++    set_target_properties(core PROPERTIES SUFFIX ".so") # corresponding to the binary release
+ endif()
+ 
+ # target alias for the custom name
+-add_library(mdl_core ALIAS ${PROJECT_NAME})
+-add_library(mdl::mdl_core ALIAS ${PROJECT_NAME})
++add_library(mdl_core ALIAS core)
++add_library(mdl::mdl_core ALIAS core)
+ 
+ # add mdl and other dependencies
+-target_add_dependencies(TARGET ${PROJECT_NAME}
++target_add_dependencies(TARGET core
+     DEPENDS
+         boost
+         ${LINKER_WHOLE_ARCHIVE}
+@@ -75,3 +75,5 @@ target_add_dependencies(TARGET ${PROJECT_NAME}
+         llvm
+         ${LINKER_NO_WHOLE_ARCHIVE}
+     )
++
++add_library(${PROJECT_NAME} ALIAS core)
+diff --git a/src/prod/lib/mdl_sdk/CMakeLists.txt b/src/prod/lib/mdl_sdk/CMakeLists.txt
+index 1b159f3..7df24b6 100644
+--- a/src/prod/lib/mdl_sdk/CMakeLists.txt
++++ b/src/prod/lib/mdl_sdk/CMakeLists.txt
+@@ -38,26 +38,26 @@ set(PROJECT_SOURCES
+ 
+ # create target from template
+ create_from_base_preset(
+-    TARGET ${PROJECT_NAME}
+-    TYPE SHARED
++    TARGET sdk
++    TYPE MODULE
+     SOURCES ${PROJECT_SOURCES}
+     EMBED_RC "mdl_sdk.rc"
+     )
+ 
+ # customize name
+-set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "lib")
+-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "mdl_sdk")
++set_target_properties(sdk PROPERTIES PREFIX "lib")
++set_target_properties(sdk PROPERTIES OUTPUT_NAME "mdl_sdk")
+ 
+ if(MACOSX)
+-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".so") # corresponding to the binary release
++    set_target_properties(sdk PROPERTIES SUFFIX ".so") # corresponding to the binary release
+ endif()
+ 
+ # target alias for the custom name
+-add_library(mdl_sdk ALIAS ${PROJECT_NAME})
+-add_library(mdl::mdl_sdk ALIAS ${PROJECT_NAME})
++add_library(mdl_sdk ALIAS sdk)
++add_library(mdl::mdl_sdk ALIAS sdk)
+ 
+ # add mdl and other dependencies
+-target_add_dependencies(TARGET ${PROJECT_NAME} 
++target_add_dependencies(TARGET sdk 
+     DEPENDS 
+         boost
+         ${LINKER_WHOLE_ARCHIVE}
+@@ -106,3 +106,5 @@ target_add_dependencies(TARGET ${PROJECT_NAME}
+ 
+ # add tests if available
+ add_tests(POST)
++
++add_library(${PROJECT_NAME} ALIAS sdk)
+diff --git a/src/shaders/plugin/dds/CMakeLists.txt b/src/shaders/plugin/dds/CMakeLists.txt
+index b4f11f5..3ef359f 100644
+--- a/src/shaders/plugin/dds/CMakeLists.txt
++++ b/src/shaders/plugin/dds/CMakeLists.txt
+@@ -56,7 +56,7 @@ set(PROJECT_SOURCES
+ # create target from template
+ create_from_base_preset(
+     TARGET ${PROJECT_NAME}
+-    TYPE SHARED
++    TYPE MODULE
+     SOURCES ${PROJECT_SOURCES}
+     EMBED_RC "dds.rc"
+ )
+diff --git a/src/shaders/plugin/freeimage/CMakeLists.txt b/src/shaders/plugin/freeimage/CMakeLists.txt
+index 8deee56..a6db0b5 100644
+--- a/src/shaders/plugin/freeimage/CMakeLists.txt
++++ b/src/shaders/plugin/freeimage/CMakeLists.txt
+@@ -48,7 +48,7 @@ set(PROJECT_SOURCES
+ # create target from template
+ create_from_base_preset(
+     TARGET ${PROJECT_NAME}
+-    TYPE SHARED
++    TYPE MODULE
+     SOURCES ${PROJECT_SOURCES}
+     EMBED_RC "freeimage.rc"
+ )

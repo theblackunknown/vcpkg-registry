@@ -6,6 +6,14 @@
 		},
 		{
 			"path": "C:\\devel\\vcpkg\\scripts\\cmake"
+		},
+		{
+			"path": "C:\\Users\\machizau\\Downloads\\vcpkg-ci"
 		}
-	]
+	],
+	"settings":
+	{
+		"ensure_newline_at_eof_on_save": false,
+		"trim_trailing_white_space_on_save": false
+	}
 }
