@@ -1,0 +1,167 @@
+name: vcpkg ports - mdl
+
+on:
+  push:
+    paths:
+      - '.github/**'
+      - 'ports/mdl/**'
+
+env:
+  PORT_NAME: mdl
+  PORT_DEPENDENCIES: freeimage[core] boost-algorithm boost-any boost-bind boost-core boost-function boost-functional boost-smart-ptr boost-tokenizer boost-unordered boost-uuid
+  VCPKG_COMMIT_ID: 68c08a4ff699c6cf7c0677db4385a9dcf93135c2
+
+jobs:
+  fetch-vcpkg-and-install-port:
+    name: install port on ${{ matrix.os }}/${{ matrix.triplet }}
+
+    runs-on: ${{ matrix.os }}
+
+    if: "!contains(github.event.head_commit.message, '[ci skip]')"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - windows-latest
+          - ubuntu-latest
+          # - macos-latest
+        triplet:
+          - x64-windows
+          - x64-windows-static
+          - x64-linux
+          # - x64-osx
+        include:
+          - os: windows-latest
+            script_suffix: .bat
+            executable_suffix: .exe
+          - os: ubuntu-latest
+            script_suffix: .sh
+            executable_suffix:
+          # - os: macos-latest
+          #   script_suffix: .sh
+          #   executable_suffix:
+        exclude:
+          - os: windows-latest
+            triplet: x64-linux
+          # - os: windows-latest
+          #   triplet: x64-osx
+          - os: ubuntu-latest
+            triplet: x64-windows
+          - os: ubuntu-latest
+            triplet: x64-windows-static
+          # - os: ubuntu-latest
+          #   triplet: x64-osx
+          # - os: macos-latest
+          #   triplet: x64-windows
+          # - os: macos-latest
+          #   triplet: x64-windows-static
+          # - os: macos-latest
+          #   triplet: x64-linux
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        path: _ports
+
+    - name: checkout vcpkg ${{ env.VCPKG_COMMIT_ID }}
+      uses: actions/checkout@v2
+      with:
+        repository: microsoft/vcpkg
+        ref       : ${{ env.VCPKG_COMMIT_ID }}
+        path      : _vcpkg
+
+    - name: remove unnecessary things (.git)
+      run: |
+        rm -rf _vcpkg/.git
+      shell: bash
+
+    - name: cache vcpkg
+      id: cache-vcpkg
+      uses: actions/cache@v2
+      with:
+        path: |
+          _vcpkg/vcpkg${{ matrix.executable_suffix }}
+        key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT_ID }}
+
+    - name: build vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+      run: |
+        _vcpkg/bootstrap-vcpkg${{ matrix.script_suffix }} -disableMetrics
+
+    - name: cache vcpkg dependencies
+      id: cache-vcpkg-dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          _vcpkg/installed/vcpkg
+          _vcpkg/installed/${{ matrix.triplet }}
+        key: ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT_ID }}
+        restore-keys: |
+          ${{ runner.os }}-vcpkg-${{ env.VCPKG_COMMIT_ID }}-${{ hashFiles('_ports/ports/mdl/CONTROL') }}
+
+    - name: system dependencies (freeglut) (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get install -y libxi-dev libgl1-mesa-dev libglu1-mesa-dev mesa-common-dev libxrandr-dev libxxf86vm-dev
+
+    - name: remove ports (Linux/macOS)
+      if: (runner.os == 'Linux') || (runner.os == 'macOS')
+      run: |
+        _vcpkg/vcpkg --overlay-ports=_ports\ports --overlay-triplets=_vcpkg/triplets/community remove --triplet ${{ matrix.triplet }} --recurse ${{ env.PORT_NAME }}
+      shell: bash
+
+    - name: install ports (Linux/macOS)
+      if: (runner.os == 'Linux') || (runner.os == 'macOS')
+      run: |
+        _vcpkg/vcpkg --overlay-ports=_ports/ports --overlay-triplets=_vcpkg/triplets/community install --triplet ${{ matrix.triplet }} --clean-after-build ${{ env.PORT_NAME }}
+      shell: bash
+
+    - name: export ports (Linux/macOS)
+      if: (runner.os == 'Linux') || (runner.os == 'macOS')
+      run: |
+        _vcpkg/vcpkg --overlay-ports=_ports/ports --overlay-triplets=_vcpkg/triplets/community export --triplet ${{ matrix.triplet }} --raw --output=vcpkg-export-${{ env.PORT_NAME }}-${{ github.run_id }} ${{ env.PORT_NAME }}
+      shell: bash
+
+    - name: remove ports (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        _vcpkg\vcpkg.exe --overlay-ports=_ports\ports --overlay-triplets=_vcpkg\triplets\community remove --triplet ${{ matrix.triplet }} --recurse ${{ env.PORT_NAME }}
+      shell: cmd
+
+    - name: install ports (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        _vcpkg\vcpkg.exe --overlay-ports=_ports\ports --overlay-triplets=_vcpkg\triplets\community install --triplet ${{ matrix.triplet }} --clean-after-build ${{ env.PORT_NAME }}
+      shell: cmd
+
+    - name: export ports (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        _vcpkg\vcpkg.exe --overlay-ports=_ports\ports --overlay-triplets=_vcpkg\triplets\community export --triplet ${{ matrix.triplet }} --raw --output=vcpkg-export-${{ env.PORT_NAME }}-${{ github.run_id }} ${{ env.PORT_NAME }}
+      shell: cmd
+
+    - name: introspect config failure (on failure)
+      if: failure()
+      run: |
+        cat _vcpkg/buildtrees/${{ env.PORT_NAME }}/config-${{ matrix.triplet }}*.log
+      shell: bash
+
+    - name: introspect install failure (on failure)
+      if: failure()
+      run: |
+        cat _vcpkg/buildtrees/${{ env.PORT_NAME }}/install-${{ matrix.triplet }}*.log
+      shell: bash
+
+    - name: upload buildtrees logs (on failure)
+      if: failure()
+      uses: actions/upload-artifact@v2
+      with:
+        name: vcpkg-buildtrees-${{ runner.os }}-${{ matrix.triplet }}-${{ github.run_id }}
+        path: |
+          _vcpkg/buildtrees/${{ env.PORT_NAME }}/*.log
+
+    - name: upload exported port
+      uses: actions/upload-artifact@v2
+      with:
+        name: vcpkg-export-${{ runner.os }}-${{ env.PORT_NAME }}-${{ matrix.triplet }}
+        path: _vcpkg/vcpkg-export-${{ env.PORT_NAME }}-${{ github.run_id }}
