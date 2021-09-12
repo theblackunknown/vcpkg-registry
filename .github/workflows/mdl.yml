@@ -9,7 +9,7 @@ on:
 env:
   PORT_NAME: mdl
   PORT_DEPENDENCIES: freeimage boost-algorithm boost-any boost-bind boost-core boost-function boost-functional boost-smart-ptr boost-tokenizer boost-unordered boost-uuid
-  VCPKG_COMMIT_ID: 68c08a4ff699c6cf7c0677db4385a9dcf93135c2
+  VCPKG_COMMIT_ID: c26477297ce1a9d67844e86bf0cda0e7741bd169
 
 jobs:
   fetch-vcpkg-and-install-port:
@@ -107,7 +107,7 @@ jobs:
     - name: remove ports (Linux/macOS)
       if: (runner.os == 'Linux') || (runner.os == 'macOS')
       run: |
-        _vcpkg/vcpkg --overlay-ports=_ports\ports --overlay-triplets=_vcpkg/triplets/community remove --triplet ${{ matrix.triplet }} --recurse ${{ env.PORT_NAME }}
+        _vcpkg/vcpkg --overlay-ports=_ports/ports --overlay-triplets=_vcpkg/triplets/community remove --triplet ${{ matrix.triplet }} --recurse ${{ env.PORT_NAME }}
       shell: bash
 
     - name: install ports (Linux/macOS)

@@ -1,8 +1,8 @@
 diff --git a/cmake/find/find_freeimage_ext.cmake b/cmake/find/find_freeimage_ext.cmake
-index 1f80293..0d7488b 100644
+index 5c1743c..d6e7551 100644
 --- a/cmake/find/find_freeimage_ext.cmake
 +++ b/cmake/find/find_freeimage_ext.cmake
-@@ -28,76 +28,130 @@
+@@ -28,78 +28,128 @@
  
  function(FIND_FREEIMAGE_EXT)
  
@@ -44,14 +44,6 @@ index 1f80293..0d7488b 100644
 +
 +        if(EXISTS ${_FREEIMAGE_HEADER_FILE})
 +            get_filename_component(_FREEIMAGE_INCLUDE ${_FREEIMAGE_HEADER_FILE} PATH)
-+
-+            if(WINDOWS)
-+                # assuming that the windows (x64) binaries from http://freeimage.sourceforge.net/download.html are used
-+                find_file(_FREEIMAGE_LIB "${CMAKE_STATIC_LIBRARY_PREFIX}freeimage${CMAKE_STATIC_LIBRARY_SUFFIX}"
-+                    HINTS
-+                        ${FREEIMAGE_DIR}
-+                        ${FREEIMAGE_DIR}/Dist/x64
-+                    )
  
 -    if(EXISTS ${_FREEIMAGE_HEADER_FILE})
 -        get_filename_component(_FREEIMAGE_INCLUDE ${_FREEIMAGE_HEADER_FILE} PATH)
@@ -81,21 +73,29 @@ index 1f80293..0d7488b 100644
 -                HINTS 
 -                    ${FREEIMAGE_DIR}
 -                    ${FREEIMAGE_DIR}/lib64
+-                    ${FREEIMAGE_DIR}/lib/aarch64-linux-gnu
 -                    ${FREEIMAGE_DIR}/lib
 -                    /usr/lib64
 -                    /usr/lib/x86_64-linux-gnu
+-                    /usr/lib/aarch64-linux-gnu
 -                    /usr/lib
 -                    /usr/local/lib
 -                )
 -
 -            if(NOT EXISTS ${_FREEIMAGE_SHARED})
 -                set(_OS_MESSAGE " install the 'libfreeimage-dev' package or")
++            if(WINDOWS)
++                # assuming that the windows (x64) binaries from http://freeimage.sourceforge.net/download.html are used
++                find_file(_FREEIMAGE_LIB "${CMAKE_STATIC_LIBRARY_PREFIX}freeimage${CMAKE_STATIC_LIBRARY_SUFFIX}"
++                    HINTS
++                        ${FREEIMAGE_DIR}
++                        ${FREEIMAGE_DIR}/Dist/x64
++                    )
 +                find_file(_FREEIMAGE_SHARED "${CMAKE_SHARED_LIBRARY_PREFIX}freeimage${CMAKE_SHARED_LIBRARY_SUFFIX}"
 +                    HINTS
 +                        ${FREEIMAGE_DIR}
 +                        ${FREEIMAGE_DIR}/Dist/x64
 +                    )
-+
 +            elseif(LINUX OR MACOSX)
 +                # assuming the 'freeimage-dev' package is installed
 +                # or freeimage was build manually and follows a common folder structure
@@ -117,7 +117,7 @@ index 1f80293..0d7488b 100644
 +                if(NOT EXISTS ${_FREEIMAGE_SHARED})
 +                    set(_OS_MESSAGE " install the 'libfreeimage-dev' package or")
 +                endif()
-+            endif()
+             endif()
 +
 +            # error if dependencies can not be resolved
 +            if(NOT EXISTS ${_FREEIMAGE_INCLUDE} OR (WINDOWS AND NOT EXISTS ${_FREEIMAGE_LIB}) OR NOT EXISTS ${_FREEIMAGE_SHARED})
@@ -127,22 +127,14 @@ index 1f80293..0d7488b 100644
 +                message(STATUS "_FREEIMAGE_LIB: ${_FREEIMAGE_LIB}")
 +                message(STATUS "_FREEIMAGE_SHARED: ${_FREEIMAGE_SHARED}")
 +                message(FATAL_ERROR "The dependency \"freeimage\" could not be resolved. Please${_OS_MESSAGE} specify 'FREEIMAGE_DIR'.")
-             endif()
++             endif()
          endif()
 -    endif()
 +    else()
 +        if(MDL_LOG_DEPENDENCIES)
 +            message(STATUS "[INFO] freeimage found via find_package")
 +        endif()
- 
--    # error if dependencies can not be resolved
--    if(NOT EXISTS ${_FREEIMAGE_INCLUDE} OR (WINDOWS AND NOT EXISTS ${_FREEIMAGE_LIB}) OR NOT EXISTS ${_FREEIMAGE_SHARED})
--        message(STATUS "FREEIMAGE_DIR: ${FREEIMAGE_DIR}")
--        message(STATUS "_FREEIMAGE_HEADER_FILE: ${_FREEIMAGE_HEADER_FILE}")
--        message(STATUS "_FREEIMAGE_INCLUDE: ${_FREEIMAGE_INCLUDE}")
--        message(STATUS "_FREEIMAGE_LIB: ${_FREEIMAGE_LIB}")
--        message(STATUS "_FREEIMAGE_SHARED: ${_FREEIMAGE_SHARED}")
--        message(FATAL_ERROR "The dependency \"freeimage\" could not be resolved. Please${_OS_MESSAGE} specify 'FREEIMAGE_DIR'.")
++
 +        get_target_property(_FREEIMAGE_INCLUDE      freeimage::FreeImage INTERFACE_INCLUDE_DIRECTORIES)
 +        get_target_property(_FREEIMAGE_DEPENDENCIES freeimage::FreeImage INTERFACE_LINK_LIBRARIES     )
 +
@@ -171,7 +163,15 @@ index 1f80293..0d7488b 100644
 +            HINTS
 +                ${_FREEIMAGE_INCLUDE}
 +        )
-+
+ 
+-    # error if dependencies can not be resolved
+-    if(NOT EXISTS ${_FREEIMAGE_INCLUDE} OR (WINDOWS AND NOT EXISTS ${_FREEIMAGE_LIB}) OR NOT EXISTS ${_FREEIMAGE_SHARED})
+-        message(STATUS "FREEIMAGE_DIR: ${FREEIMAGE_DIR}")
+-        message(STATUS "_FREEIMAGE_HEADER_FILE: ${_FREEIMAGE_HEADER_FILE}")
+-        message(STATUS "_FREEIMAGE_INCLUDE: ${_FREEIMAGE_INCLUDE}")
+-        message(STATUS "_FREEIMAGE_LIB: ${_FREEIMAGE_LIB}")
+-        message(STATUS "_FREEIMAGE_SHARED: ${_FREEIMAGE_SHARED}")
+-        message(FATAL_ERROR "The dependency \"freeimage\" could not be resolved. Please${_OS_MESSAGE} specify 'FREEIMAGE_DIR'.")
 +        # error if dependencies can not be resolved
 +        if(NOT EXISTS ${_FREEIMAGE_INCLUDE} OR (WINDOWS AND NOT EXISTS ${_FREEIMAGE_LIB}) OR NOT EXISTS ${_FREEIMAGE_SHARED})
 +            message(STATUS "FREEIMAGE_DIR: ${FREEIMAGE_DIR}")

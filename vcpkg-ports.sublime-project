@@ -7,9 +7,6 @@
 		{
 			"path": "C:/devel/vcpkg/scripts/cmake",
 		},
-		{
-			"path": "C:/Users/machizau/Downloads/vcpkg-ci",
-		},
 	],
 	"settings":
 	{
