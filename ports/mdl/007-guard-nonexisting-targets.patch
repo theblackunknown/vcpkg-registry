@@ -2,15 +2,6 @@ diff --git a/src/mdl/jit/llvm/CMakeLists.txt b/src/mdl/jit/llvm/CMakeLists.txt
 index 70f7f50..13857be 100644
 --- a/src/mdl/jit/llvm/CMakeLists.txt
 +++ b/src/mdl/jit/llvm/CMakeLists.txt
-@@ -43,7 +43,7 @@ endif()
- # create target from template
- create_from_base_preset(
-     TARGET ${PROJECT_NAME}
--    SOURCES 
-+    SOURCES
-         ${DUMMY_CPP}
-         ${CMAKE_CURRENT_BINARY_DIR}/llvm.d
-     )
 @@ -289,11 +289,16 @@ endforeach()
  
  # -------------------------------------------------------------------------------------------------
@@ -68,46 +59,3 @@ index 70f7f50..13857be 100644
  endif()
  
  
-@@ -381,7 +387,7 @@ set_target_properties(${_LLVM_EXCLUDE}
- # fix llvm build issues
- # --------------------------------------------------------------------------------------------------
- add_custom_command(
--    OUTPUT 
-+    OUTPUT
-         # ${CMAKE_CURRENT_BINARY_DIR}/dist/NATIVE/Release/bin/llvm-tblgen
-         # ${CMAKE_CURRENT_BINARY_DIR}/dist/lib/Transforms/InstCombine/CMakeFiles/InstCombineTableGen
-         # ${CMAKE_CURRENT_BINARY_DIR}/dist/lib/IR/CMakeFiles/AttributeCompatFuncTableGen
-@@ -393,7 +399,7 @@ add_custom_command(
-         # ${CMAKE_CURRENT_BINARY_DIR}/dist/lib/target/x86/cmakefiles/x86commontablegen
-         # ${CMAKE_CURRENT_BINARY_DIR}/dist/utils/tablegen/cmakefiles/llvm-tablegen-host
-         ${CMAKE_CURRENT_BINARY_DIR}/llvm.d
--    DEPENDS 
-+    DEPENDS
-         ${_LLVM_LIB_NAMES}
- 
-     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/dist/NATIVE/Release/bin
-diff --git a/src/shaders/plugin/freeimage/CMakeLists.txt b/src/shaders/plugin/freeimage/CMakeLists.txt
-index 8deee56..7fb4f83 100644
---- a/src/shaders/plugin/freeimage/CMakeLists.txt
-+++ b/src/shaders/plugin/freeimage/CMakeLists.txt
-@@ -37,7 +37,7 @@ set(PROJECT_HEADERS
-     "freeimage_utilities.h"
-     )
- 
--set(PROJECT_SOURCES 
-+set(PROJECT_SOURCES
-     "freeimage_image_plugin_impl.cpp"
-     "freeimage_image_file_reader_impl.cpp"
-     "freeimage_image_file_writer_impl.cpp"
-@@ -66,8 +66,8 @@ add_library(nv_freeimage ALIAS ${PROJECT_NAME})
- add_library(mdl::nv_freeimage ALIAS ${PROJECT_NAME})
- 
- # add dependencies other dependencies
--target_add_dependencies(TARGET ${PROJECT_NAME} 
-+target_add_dependencies(TARGET ${PROJECT_NAME}
-     DEPENDS
-         freeimage
-         mdl::base-system-version
--    )
-\ No newline at end of file
-+    )

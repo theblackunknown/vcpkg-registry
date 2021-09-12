@@ -1,0 +1,25 @@
+{
+  "name": "mdl",
+  "version-semver": "2020.1.1",
+  "description": "NVIDIA Material Definition Language SDK",
+  "supports": "!static",
+  "homepage": "https://github.com/NVIDIA/MDL-SDK",
+  "maintainers": [
+      "NVIDIA",
+      "Andréa Machizaud <andrea.machizaud@gmail.com>"
+  ],
+  "dependencies": [
+      "boost-algorithm",
+      "boost-any",
+      "boost-bind",
+      "boost-core",
+      "boost-function",
+      "boost-functional",
+      "boost-smart-ptr",
+      "boost-tokenizer",
+      "boost-unordered",
+      "boost-uuid",
+      "freeimage",
+      "opengl"
+  ]
+}

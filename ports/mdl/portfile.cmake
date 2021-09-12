@@ -22,8 +22,8 @@ endif()
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO NVIDIA/MDL-SDK
-    REF 2020.1.1
-    SHA512 591862fe07c580208f9d1dcacb420cf344afbde49e1f7a96d67cc2e1746213ad2c97fcab425e57598763688c271ecca6581a02d09bf78309ba03569aa3d32e7a
+    REF cf90e466e39d7d91ee2af96a312674a0cf0dfa70 # 2020.1.1
+    SHA512 dd0652d6b13666f77842c67f1b8958b5c11475952ad21fe8e1d4738680b2a355206e76ba1ad5d3f2be92d937bf2d1529a9f0d6393921271a647152c1abe9abc7
     HEAD_REF master
     PATCHES
         001-freeimage-from-vcpkg.patch
@@ -94,5 +94,3 @@ vcpkg_copy_tools(
 vcpkg_fixup_cmake_targets()
 
 file(INSTALL ${SOURCE_PATH}/LICENSE.md DESTINATION ${CURRENT_PACKAGES_DIR}/share/${PORT} RENAME copyright)
-
-vcpkg_test_cmake(PACKAGE_NAME ${PORT})

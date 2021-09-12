@@ -1,9 +1,0 @@
-Source: mdl
-Version: 2020.1.1
-Homepage: https://github.com/NVIDIA/MDL-SDK
-Description: NVIDIA Material Definition Language SDK
-Build-Depends: boost-algorithm, boost-any, boost-bind, boost-core, boost-function, boost-functional, boost-smart-ptr, boost-tokenizer, boost-unordered, boost-uuid
-
-Feature: image-plugins
-Description: Enables image plugins (DDS/FreeImage)
-Build-Depends: freeimage[core]

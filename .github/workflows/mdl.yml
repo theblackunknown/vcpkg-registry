@@ -8,7 +8,7 @@ on:
 
 env:
   PORT_NAME: mdl
-  PORT_DEPENDENCIES: freeimage[core] boost-algorithm boost-any boost-bind boost-core boost-function boost-functional boost-smart-ptr boost-tokenizer boost-unordered boost-uuid
+  PORT_DEPENDENCIES: freeimage boost-algorithm boost-any boost-bind boost-core boost-function boost-functional boost-smart-ptr boost-tokenizer boost-unordered boost-uuid
   VCPKG_COMMIT_ID: 68c08a4ff699c6cf7c0677db4385a9dcf93135c2
 
 jobs:
