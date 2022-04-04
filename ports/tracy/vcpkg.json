@@ -1,0 +1,41 @@
+{
+  "name": "tracy",
+  "version": "0.8.0",
+  "port-version": 1,
+  "description": "A real time, nanosecond resolution, remote telemetry, hybrid frame and sampling profiler for games and other applications.",
+  "homepage": "https://github.com/wolfpld/tracy",
+  "supports": "!(windows & (arm | uwp))",
+  "dependencies": [
+    {
+      "name": "pthreads",
+      "platform": "!windows"
+    },
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ],
+  "features": {
+    "capture": {
+      "description": "Build Tracy tool `capture`",
+      "dependencies": [
+        { "name": "capstone", "features":[ "arm", "arm64", "x86" ] },
+        "freetype",
+        "zstd"
+      ]
+    },
+    "profiler": {
+      "description": "Build Tracy tool `profiler`",
+      "dependencies": [
+        { "name": "capstone", "features":[ "arm", "arm64", "x86" ] },
+        "freetype",
+        "glfw3",
+        "zstd"
+      ]
+    }
+  }
+}
